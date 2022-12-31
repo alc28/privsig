@@ -122,10 +122,22 @@ df_what2 %>%
 
 ```
 
-# build a dataframe
-```{r}
 
+# Script Structure
+
+## build a dataframe
+```{r}
+df <- tibble(
+  todays_date = NA,
+  repo_key = NA,
+  repo_url = NA,
+  pdd_url = NA,
+  pdd_lastmod_date = NA,
+  pdd_selected = NA
+)
 
 
 ```
+
+
 
