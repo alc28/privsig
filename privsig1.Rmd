@@ -122,3 +122,10 @@ df_what2 %>%
 
 ```
 
+# build a dataframe
+```{r}
+
+
+
+```
+
