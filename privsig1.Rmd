@@ -1,0 +1,124 @@
+---
+title: "priv sig 1"
+output: html_document
+date: "2022-12-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rvest)
+
+pages <- c(
+'https://github.com/orgs/folio-org/repositories?page=1',
+'https://github.com/orgs/folio-org/repositories?page=2',
+'https://github.com/orgs/folio-org/repositories?page=3',
+'https://github.com/orgs/folio-org/repositories?page=4',
+'https://github.com/orgs/folio-org/repositories?page=5',
+'https://github.com/orgs/folio-org/repositories?page=6',
+'https://github.com/orgs/folio-org/repositories?page=7',
+'https://github.com/orgs/folio-org/repositories?page=8',
+'https://github.com/orgs/folio-org/repositories?page=9',
+'https://github.com/orgs/folio-org/repositories?page=10',
+'https://github.com/orgs/folio-org/repositories?page=11'
+)
+
+pages_sample <- c(
+'https://github.com/orgs/folio-org/repositories?page=1',
+'https://github.com/orgs/folio-org/repositories?page=2'
+)
+
+
+```
+
+```{r}
+out <- vector("list", length(pages_sample))
+for (i in seq_along(pages_sample)) {
+  
+  df1 <- read_html(pages_sample[[i]]) %>% 
+    html_elements("a") %>% 
+    html_attr("href")
+
+  out[[i]] <- df1
+}
+
+
+```
+
+
+```{r}
+all_href <- unlist(out)
+
+df_all_href <- tibble(
+  rawlinks = all_href
+)
+
+df_all_href %>%
+  filter(str_detect(rawlinks, "/folio-org/")) %>%
+  filter(str_count(rawlinks, "/") == 2) 
+
+
+
+```
+
+```{r}
+# reading PDD example
+
+
+pdd_example <- "https://github.com/folio-org/mod-orders/blob/master/PERSONAL_DATA_DISCLOSURE.md"
+
+pdd_example_raw <- "https://raw.githubusercontent.com/folio-org/mod-orders/master/PERSONAL_DATA_DISCLOSURE.md"
+  
+example_html_raw <- read_html(pdd_example_raw)
+
+download.file(pdd_example_raw, "input/pdd_example_raw.txt")
+download.file(pdd_example, "input/pdd_example.html")
+
+
+filefromdisk <- read_file("input/pdd_example_raw.txt")
+
+df_filefromdisk <- tibble(
+  rawlines = filefromdisk
+)
+
+df_filefromdisk %>%
+  mutate(str_split(rawlines, "\r\n"))
+
+file_commits <- read_html(pdd_example)
+
+# works! Just need to parse this text with regex to get commit date.
+file_commits %>%
+  html_text2()
+
+
+read_html(pdd_example) %>%
+  html_elements("span.d-md-inline > span:nth-child(3)")
+  #html_text2()
+
+
+```
+```{r}
+what <- readLines("input/pdd_example_raw.txt")
+
+df_what <- tibble(
+  rawline = what
+)
+
+df_what %>%
+  filter(str_detect(rawline, "This module does not store any personal data"))
+
+
+readLines(pdd_example_raw)
+
+df_what2 <- tibble(
+  rawline = readLines(pdd_example_raw)
+)
+
+df_what2 %>%
+  filter(str_detect(rawline, "\\[x\\]"))
+
+```
+

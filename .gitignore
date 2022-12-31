@@ -37,3 +37,12 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# R project file
+privsig.Rproj
+
+# .gitignore
+.gitignore
+
+# sandbox
+sandbox2.Rmd
