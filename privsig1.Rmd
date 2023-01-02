@@ -11,7 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(rvest)
+```
 
+
+```{r}
 pages <- c(
 'https://github.com/orgs/folio-org/repositories?page=1',
 'https://github.com/orgs/folio-org/repositories?page=2',
@@ -34,35 +37,106 @@ pages_sample <- c(
 
 ```
 
+## pull navigation pages
 ```{r}
 out <- vector("list", length(pages_sample))
 for (i in seq_along(pages_sample)) {
-  
   df1 <- read_html(pages_sample[[i]]) %>% 
     html_elements("a") %>% 
     html_attr("href")
-
   out[[i]] <- df1
 }
-
-
 ```
 
 
+## Create dataframe
 ```{r}
 all_href <- unlist(out)
-
 df_all_href <- tibble(
   rawlinks = all_href
 )
 
-df_all_href %>%
+# https://github.com/folio-org/folio-integration-tests
+# https://github.com/folio-org/mod-inn-reach/blob/master/PERSONAL_DATA_DISCLOSURE.md
+
+df_repos <- df_all_href %>%
   filter(str_detect(rawlinks, "/folio-org/")) %>%
-  filter(str_count(rawlinks, "/") == 2) 
+  filter(str_count(rawlinks, "/") == 2) %>%
+  arrange(rawlinks) %>%
+  mutate(todays_date = format(Sys.time(), "%Y-%m-%e"),
+         repo_key = rawlinks,
+         repo_url = paste0("https://github.com", repo_key),
+         pdd_url = paste0(repo_url, "/blob/master/PERSONAL_DATA_DISCLOSURE.md"),
+         pdd_lastmod_date = NA,
+         pdd_declared = NA,
+         pdd_rawhtml = NA,
+         repo_manager = NA
+  ) %>%
+  select(-rawlinks)
+
+```
+
+
+```{r}
+read_url <- function(url) {
+    out <- tryCatch(
+        {
+            #message("This is the 'try' part")
+            url %>% 
+            as.character() %>% read_html() 
+        },
+        error=function(cond) {
+            #message(paste("URL does not seem to exist:", url))
+            #message("Here's the original error message:")
+            #message(cond)
+            return(NA)
+        }
+    )    
+    return(out)
+}
+
+test_df_repos <- df_repos %>%
+  sample_n(1)
+
+test_df_repos
+
+present_test_df_repos <- test_df_repos
+
+testdata <- bind_rows(present_test_df_repos, missing_test_df_repos)
+
+testdata
+
+for( i in 1:nrow(testdata)) {
+  testdata$pdd_rawhtml[i] <- read_url(testdata$pdd_url[i])
+}
+
+
+testdata$pdd_rawhtml[1] %>%
+  html_text()
+```
+
+
+
+```{r}
+
+test_df_repos
+
+#missing pdd file
+missingfileexample <- "https://github.com/folio-org/ui-finc-config/blob/master/PERSONAL_DATA_DISCLOSURE.md"
+
+presentfile <- "https://github.com/folio-org/mod-inn-reach/blob/master/PERSONAL_DATA_DISCLOSURE.md"
+
+get_raw_page <- function(url) {
+  ret <- read_html(url)
+  return(ret)
+}
 
 
 
 ```
+
+
+
 
 ```{r}
 # reading PDD example
@@ -71,7 +145,8 @@ df_all_href %>%
 pdd_example <- "https://github.com/folio-org/mod-orders/blob/master/PERSONAL_DATA_DISCLOSURE.md"
 
 pdd_example_raw <- "https://raw.githubusercontent.com/folio-org/mod-orders/master/PERSONAL_DATA_DISCLOSURE.md"
-  
+
+example_html <- read_html(pdd_example)
 example_html_raw <- read_html(pdd_example_raw)
 
 download.file(pdd_example_raw, "input/pdd_example_raw.txt")
@@ -100,6 +175,7 @@ read_html(pdd_example) %>%
 
 
 ```
+
 ```{r}
 what <- readLines("input/pdd_example_raw.txt")
 
@@ -123,21 +199,28 @@ df_what2 %>%
 ```
 
 
-# Script Structure
+Next Steps:
+Create pdd raw test files for all expected conditions:
+- no file
+- file but no pd
+- file with one pd
+- file with more than one pd
 
-## build a dataframe
-```{r}
-df <- tibble(
-  todays_date = NA,
-  repo_key = NA,
-  repo_url = NA,
-  pdd_url = NA,
-  pdd_lastmod_date = NA,
-  pdd_selected = NA
-)
+Add test files to https://github.com/alc28/privsig
 
+Write standalone function to process test files
+- Return either NA or concatenated strings of pd lines retrieved
 
-```
+Revise df_repos dataframe creation to get the url of pdd raw version.
+
+Write loop to pull in results of pdd raw across df_repos
+
+Write function to parse the pdd raw history page to get last commit date
+
+Write loop to pull in commit dates
+
+How to identify folio repos that are in production?
+
 
 
 
