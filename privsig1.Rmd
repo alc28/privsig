@@ -197,29 +197,86 @@ df_what2 %>%
   filter(str_detect(rawline, "\\[x\\]"))
 
 ```
-
+# Now I have a plan
 
 Next Steps:
-Create pdd raw test files for all expected conditions:
+DONE Create pdd raw test files for all expected conditions:
 - no file
 - file but no pd
 - file with one pd
 - file with more than one pd
 
-Add test files to https://github.com/alc28/privsig
+DONE Add test files to https://github.com/alc28/privsig
+
+Create a test df with the urls of the test files.
+
+
+
+
+```{r}
+df_testfiles <- tibble(
+  id = 1:4,
+  pd_declarations = NA,
+  test_pdd_file = c("https://github.com/alc28/privsig/blob/main/test_files/PERSONAL_DATA_DISCLOSURE_no_pd.md", "https://github.com/alc28/privsig/blob/main/test_files/PERSONAL_DATA_DISCLOSURE_one_pd_line.md", "https://github.com/alc28/privsig/blob/main/test_files/PERSONAL_DATA_DISCLOSURE_multiple_pd_line.md", "https://github.com/alc28/privsig/blob/main/test_files/PERSONAL_DATA_DISCLOSURE_missing_pdd.md"),
+  test_pdd_file_history = c("https://github.com/alc28/privsig/commits/main/test_files/PERSONAL_DATA_DISCLOSURE_no_pd.md", "https://github.com/alc28/privsig/commits/main/test_files/PERSONAL_DATA_DISCLOSURE_one_pd_line.md", "https://github.com/alc28/privsig/commits/main/test_files/PERSONAL_DATA_DISCLOSURE_multiple_pd_line.md", "https://github.com/alc28/privsig/commits/main/test_files/PERSONAL_DATA_DISCLOSURE_missing_pdd.md"),
+  test_pdd_last_commit = NA
+)
+```
 
 Write standalone function to process test files
 - Return either NA or concatenated strings of pd lines retrieved
 
+```{r}
+
+read_url <- function(url) {
+    out <- tryCatch(
+        {
+            #message("This is the 'try' part")
+            url %>% 
+            as.character() %>% read_html() 
+        },
+        error=function(cond) {
+            #message(paste("URL does not seem to exist:", url))
+            #message("Here's the original error message:")
+            #message(cond)
+            return(NA)
+        }
+    )    
+    return(out)
+}
+
+
+raw_html_return <- read_html("https://raw.githubusercontent.com/alc28/privsig/main/test_files/PERSONAL_DATA_DISCLOSURE_multiple_pd_line.md") %>%
+  html_text()
+
+
+text1 <- raw_html_return 
+  
+
+str_locate_all(text1, "\\[[x|X]\\]")
+
+text2 <- str_extract_all(text1, "\\[[x|X]\\].*\n") %>% unlist() %>% str_remove_all(., "\n")
+
+paste(text2, collapse = " | ")
+
+
+```
+
+
 Revise df_repos dataframe creation to get the url of pdd raw version.
 
-Write loop to pull in results of pdd raw across df_repos
+Write loop 3 to pull in results of pdd raw across df_repos
 
 Write function to parse the pdd raw history page to get last commit date
+
+<!-- <div class="TimelineItem-body"> -->
+<!--             <h2 class="f5 text-normal" >Commits on Jan 1, 2023</h2> -->
+
 
 Write loop to pull in commit dates
 
 How to identify folio repos that are in production?
+
 
 
 
