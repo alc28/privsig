@@ -228,12 +228,19 @@ Write standalone function to process test files
 
 ```{r}
 
+parse_pdd_md <- function(url) {
+  raw_html_return <- read_html(url) %>%
+  html_text()
+  text2 <- str_extract_all(raw_html_return, "\\[[x|X]\\].*\n") %>% unlist() %>% str_remove_all(., "\n")
+  return(text2)
+}
+
+
 read_url <- function(url) {
     out <- tryCatch(
         {
             #message("This is the 'try' part")
-            url %>% 
-            as.character() %>% read_html() 
+            parse_pdd_md(url) 
         },
         error=function(cond) {
             #message(paste("URL does not seem to exist:", url))
@@ -246,18 +253,10 @@ read_url <- function(url) {
 }
 
 
-raw_html_return <- read_html("https://raw.githubusercontent.com/alc28/privsig/main/test_files/PERSONAL_DATA_DISCLOSURE_multiple_pd_line.md") %>%
-  html_text()
 
+read_url("https://raw.githubusercontent.com/alc28/privsig/main/test_files/PERSONAL_DATA_DISCLOSURE_no_pd.md")
 
-text1 <- raw_html_return 
-  
-
-str_locate_all(text1, "\\[[x|X]\\]")
-
-text2 <- str_extract_all(text1, "\\[[x|X]\\].*\n") %>% unlist() %>% str_remove_all(., "\n")
-
-paste(text2, collapse = " | ")
+read_url("https://raw.githubusercontent.com/alc28/privsig/main/test_files/PERSONAL_DATA_DISCLOSURE_missing_pd.md")
 
 
 ```
@@ -276,7 +275,6 @@ Write function to parse the pdd raw history page to get last commit date
 Write loop to pull in commit dates
 
 How to identify folio repos that are in production?
-
 
 
 
