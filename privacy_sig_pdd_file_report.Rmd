@@ -1,0 +1,134 @@
+---
+title: "FOLIO Privacy SIG PDD file status report"
+output: html_document
+author: Adam Chandler
+date: "`r format(Sys.time(), '%d %B %Y')`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+```
+
+## Load libraries
+
+```{r}
+library(tidyverse)
+library(rvest)
+```
+
+## List of repo navigation pages
+
+```{r}
+pages <- c(
+'https://github.com/orgs/folio-org/repositories?page=1',
+'https://github.com/orgs/folio-org/repositories?page=2',
+'https://github.com/orgs/folio-org/repositories?page=3',
+'https://github.com/orgs/folio-org/repositories?page=4',
+'https://github.com/orgs/folio-org/repositories?page=5',
+'https://github.com/orgs/folio-org/repositories?page=6',
+'https://github.com/orgs/folio-org/repositories?page=7',
+'https://github.com/orgs/folio-org/repositories?page=8',
+'https://github.com/orgs/folio-org/repositories?page=9',
+'https://github.com/orgs/folio-org/repositories?page=10',
+'https://github.com/orgs/folio-org/repositories?page=11'
+)
+
+pages_sample <- c(
+'https://github.com/orgs/folio-org/repositories?page=1',
+'https://github.com/orgs/folio-org/repositories?page=2'
+)
+
+
+```
+
+## Pull navigation pages
+
+```{r}
+out <- vector("list", length(pages_sample))
+for (i in seq_along(pages_sample)) {
+  df1 <- read_html(pages_sample[[i]]) %>% 
+    html_elements("a") %>% 
+    html_attr("href")
+  out[[i]] <- df1
+}
+
+all_href <- unlist(out)
+df_all_href <- tibble(
+  rawlinks = all_href
+)
+```
+
+## Create dataframe to store file locations and data
+
+```{r}
+df_repos <- df_all_href %>%
+  filter(str_detect(rawlinks, "/folio-org/")) %>%
+  filter(str_count(rawlinks, "/") == 2) %>%
+  arrange(rawlinks) %>%
+  mutate(todays_date = format(Sys.time(), "%Y-%m-%d"),
+         repo_key = rawlinks,
+         repo_url = paste0("https://github.com", repo_key),
+         expected_pdd_url = paste0("https://raw.githubusercontent.com", repo_key, "/master/PERSONAL_DATA_DISCLOSURE.md"),
+         pdd_declared = NA
+  ) %>%
+  select(-rawlinks)
+```
+
+## Function to read PDD files
+
+Return either NA or concatenated strings of pd lines retrieved
+
+
+```{r}
+parse_pdd_md <- function(url) {
+  raw_html_return <- read_html(url) %>%
+  html_text()
+  text2 <- str_extract_all(raw_html_return, "\\[[x|X]\\].*\n") %>% unlist() %>% str_remove_all(., "\n")
+  text3 <- paste(text2, collapse = " | ")
+  return(text3)
+}
+
+read_url <- function(url) {
+    out <- tryCatch(
+        {
+            parse_pdd_md(url) 
+        },
+        error=function(cond) {
+            return(NA)
+        }
+    )    
+    return(out)
+}
+
+```
+
+## Pull in results of pdd raw across df_repos
+
+```{r}
+
+sample_df_repos <- df_repos
+
+for (i in 1:nrow(sample_df_repos)) {
+  sample_df_repos$pdd_declared[[i]] <- read_url(sample_df_repos$expected_pdd_url[[i]])
+}
+
+Sys.sleep(3)
+closeAllConnections()
+
+```
+
+## Save results
+
+```{r}
+format(Sys.time(), '%Y-%m-%d')
+findings_filename <- paste0("output/folio_pdd_status_", format(Sys.time(), '%Y-%m-%d'), ".rds")
+sample_df_repos %>%
+  write_rds(findings_filename)
+
+testrds <- read_rds("output/folio_pdd_status_2023-01-04.rds")
+```
+
+
+## Findings
+
+How to identify folio repos that are in production?
